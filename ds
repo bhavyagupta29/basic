@@ -1,0 +1,168 @@
+#include <iostream>
+#include <map>
+#include <experimental/map>
+
+bool circular = false;
+std::map<int, int> nodeData;
+
+class Node {
+	public:
+		int data;
+		Node *next;
+		Node (int data) {
+			this->data = data;
+			this->next = nullptr;
+		}
+};
+
+void insert(Node *&head, int x) {
+	Node *newNode = new Node(x);
+	if (!head) {
+		head = newNode;
+	} else {
+		Node *temp = head;
+		while (temp->next)
+			temp = temp->next;
+		temp->next = newNode;
+	}
+}
+
+void insertNext(Node *&head, int y, int x) {
+	Node *temp = head;
+	while (temp) {
+		if (temp->data == y) {
+			Node *newNode = new Node(x);
+			newNode->next = temp->next;
+			temp->next = newNode;
+			return;
+		}
+		temp = temp->next;
+	}
+	if (!temp) {
+		Node* prev = nullptr;
+		temp = head;
+		while (temp) {
+			if (temp->data == x) {
+				Node *newNode = new Node(y);
+				newNode->next = temp;
+				if (temp == head) head = newNode;
+				else prev->next = newNode;
+				return;
+			}
+			prev = temp;
+			temp = temp->next;
+		}
+	}
+}
+
+void insertMid(Node *&head, int z, int y, int x){
+	int start = 0, end = 0, count = 0;
+	Node *temp = head;
+	bool zVisit = false;
+	while (temp->data != y) {
+		if (temp->data == z)
+			zVisit = true;
+		if (!zVisit)
+			start++;
+		end++;
+		temp = temp->next;
+	}
+	int mid = (start + end) / 2;
+	temp = head;
+	while (count++ < mid)
+		temp = temp->next;
+	Node *newNode = new Node(x);
+	newNode->next = temp->next;
+	temp->next = newNode;
+}
+
+void linkNode(Node *&head, int x, int p){
+	Node *temp = head;
+	while (temp->data != x)
+		temp = temp->next;
+	Node *curr = temp;
+	int count = 1;
+	while (count++ < p) {
+		if (!temp->next && !::circular) {
+			::circular = true;
+			temp->next = head;
+		}
+		temp = temp->next;
+	}
+	int key = (curr->next)->data;
+	if (!nodeData.count(key))
+		nodeData[key] = 1;
+	nodeData[key]--;
+
+	curr->next = temp->next;
+	key = (curr->next)->data;
+	if (!nodeData.count(key))
+		nodeData[key] = 1;
+	nodeData[key]++;
+}
+
+void printList(Node *&head) {
+	Node *temp = head;
+	if (::circular)
+		while (temp->next != head) {
+			std::cout << temp->data << ' ';
+			temp = temp->next;
+		}
+	else
+		while (temp) {
+			std::cout << temp->data << ' ';
+			temp = temp->next;
+		}
+}
+
+bool printData() {
+	std::cout << ::circular << '\n';
+	std::experimental::erase_if(nodeData,
+			[](const auto &node){
+			return node.second < 2;
+			});
+	int count = nodeData.size();
+	std::cout << count << '\n';
+	if (count) {
+		for (const auto &node: nodeData)
+			std::cout << node.first << ' ';
+		std::cout << std::endl;
+		for (const auto &node: nodeData)
+			std::cout << node.second << ' ';
+		return 0;
+	}
+	return 1;
+}
+
+int main() {
+	int n;
+	std::cin >> n;
+	Node *head = nullptr;
+	while (n--) {
+		char input;
+		int x;
+		std::cin >> input;
+		if (input == 'U') {
+			int p;
+			std::cin >> x >> p;
+			linkNode(head, x, p);
+		} else {
+			int num;
+			std::cin >> num;
+			if (num == 0) {
+				std::cin >> x;
+				insert(head, x);
+			} else if (num == 1) {
+				int y;
+				std::cin >> y >> x;
+				insertNext(head, y, x);
+			} else if (num == 2) {
+				int z, y;
+				std::cin >> z >> y >> x;
+				insertMid(head, z, y, x);
+			}
+		}
+	}
+	if (printData())
+		printList(head);
+	return 0;
